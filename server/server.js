@@ -2,69 +2,64 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const { errorHandler } = require('./middleware/errorMiddleware');
 
 dotenv.config();
 
 const app = express();
 
-// Middleware
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-  process.env.FRONTEND_URL, // For production
-].filter(Boolean);
+// ================== MIDDLEWARE ==================
 
+// ✅ CORS (safe + works in production)
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // allow all origins (fixes Render issues)
   credentials: true,
 }));
+
 app.use(express.json());
 
-// Routes
+// ================== ROUTES ==================
+
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/transactions', require('./routes/transactionRoutes'));
 app.use('/api/budgets', require('./routes/budgetRoutes'));
 
-// Serve static assets in production
-const path = require('path');
+// ================== SERVE FRONTEND ==================
+
 if (process.env.NODE_ENV === 'production') {
-  // Set static folder
-  const clientDistPath = path.join(process.cwd(), 'client', 'dist');
+  const __dirname = path.resolve();
+
+  const clientDistPath = path.join(__dirname, 'client', 'dist');
+
+  // Serve static files
   app.use(express.static(clientDistPath));
 
-  app.get(/.*/, (req, res) => {
-    const indexPath = path.join(clientDistPath, 'index.html');
-    res.sendFile(indexPath, (err) => {
-      if (err) {
-        console.error('Error sending index.html:', err.message);
-        console.error('Resolved path was:', indexPath);
-        res.status(500).send('An error occurred loading the application.');
-      }
-    });
+  // React routing fix
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
   });
 } else {
-  app.get('/', (req, res) => res.json({ message: 'Expense Tracker API is running 🚀' }));
+  app.get('/', (req, res) =>
+    res.json({ message: 'Expense Tracker API is running 🚀' })
+  );
 }
 
-// Error Handler
+// ================== ERROR HANDLER ==================
+
 app.use(errorHandler);
 
-// Connect DB and start server
+// ================== DB + SERVER ==================
+
 const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB Connected');
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    app.listen(PORT, () =>
+      console.log(`🚀 Server running on port ${PORT}`)
+    );
   })
   .catch((err) => {
     console.error('❌ MongoDB connection error:', err.message);
