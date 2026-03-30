@@ -37,13 +37,15 @@ app.use('/api/budgets', require('./routes/budgetRoutes'));
 const path = require('path');
 if (process.env.NODE_ENV === 'production') {
   // Set static folder
-  app.use(express.static(path.join(__dirname, '../client/dist')));
+  const clientDistPath = path.join(process.cwd(), 'client', 'dist');
+  app.use(express.static(clientDistPath));
 
   app.get(/.*/, (req, res) => {
-    const indexPath = path.resolve(__dirname, '../client', 'dist', 'index.html');
+    const indexPath = path.join(clientDistPath, 'index.html');
     res.sendFile(indexPath, (err) => {
       if (err) {
         console.error('Error sending index.html:', err.message);
+        console.error('Resolved path was:', indexPath);
         res.status(500).send('An error occurred loading the application.');
       }
     });
