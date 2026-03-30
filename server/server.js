@@ -40,7 +40,13 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/dist')));
 
   app.get(/.*/, (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+    const indexPath = path.resolve(__dirname, '../client', 'dist', 'index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error('Error sending index.html:', err.message);
+        res.status(500).send('An error occurred loading the application.');
+      }
+    });
   });
 } else {
   app.get('/', (req, res) => res.json({ message: 'Expense Tracker API is running 🚀' }));
