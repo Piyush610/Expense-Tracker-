@@ -1,7 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  // In production (Render), VITE_API_URL is not set so we use relative URLs
+  // since frontend and backend are served from the same server.
+  // In development, VITE_API_URL=http://localhost:5000 is used.
+  baseURL: import.meta.env.VITE_API_URL || '',
 });
 
 // Attach JWT token to every request
